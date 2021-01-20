@@ -1,12 +1,12 @@
 // Sentry Integration for RPG Maker MV
-// Version R1.01
+// Version R1.02
 // Created by Studio ACE
 
 var FirehawkADK = FirehawkADK || {};
 FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
 /*:
  *
- * @plugindesc R1.01 || Provides automatic crash and error reports to the developer using Sentry.
+ * @plugindesc R1.02 || Provides automatic crash and error reports to the developer using Sentry.
  * @author AceOfAces
  * 
  * @param Setup
@@ -29,6 +29,14 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * @param Default Setting
  * @parent Setup
  * @desc Which will be the default?
+ * @type boolean
+ * @on Send
+ * @off Don't send
+ * @default false
+ * 
+ * @param Release Health
+ * @parent Setup
+ * @desc Should Sentry report the session's status? This is helpful for diagnosing regressions.
  * @type boolean
  * @on Send
  * @off Don't send
@@ -89,7 +97,7 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * 
  * @help
  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
- * Sentry Integration for RPG Maker MV - Version R1.01
+ * Sentry Integration for RPG Maker MV - Version R1.00
  * Developed by AceOfAces
  * Licensed under the MIT license. Can be used for both non-commercial
  * and commercial games.
@@ -103,6 +111,7 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
  * Installation and setup:
  * 1. Sign up to Sentry (https://sentry.io). We'll need a DSN for this.
+ * Note: Make sure that the version 6.0.0 or higher.
  * 2. Once you've signed up, you'll be asked to create a project.
  * follow the instruction (make sure to select JavaScript as the
  * programming language).
@@ -197,16 +206,18 @@ FirehawkADK.ParamDeck.SentryFeedbackScreenNameField = String(paramdeck['Name Fie
 FirehawkADK.ParamDeck.SentryFeedbackScreenEmailField = String(paramdeck['Email Field Label']);
 FirehawkADK.ParamDeck.SentryFeedbackScreenCommentsField = String(paramdeck['Comments Field Label']);
 FirehawkADK.ParamDeck.SentryFeedbackScreenSuccessMessage = String(paramdeck['Feedback Sent Label']);
- 
+FirehawkADK.ParamDeck.SentryReportGameHealth = String(paramdeck['Release Health']).trim().toLowerCase() === 'true';
+
 //The initialization code. 
 Sentry.init({
-    dsn: FirehawkADK.ParamDeck.SentryDSN, 
-    release: FirehawkADK.ParamDeck.SentryReleaseTag, 
-    environment: FirehawkADK.ParamDeck.SentryEnvironmentTag, 
+    dsn: FirehawkADK.ParamDeck.SentryDSN,
+    release: FirehawkADK.ParamDeck.SentryReleaseTag,
+    environment: FirehawkADK.ParamDeck.SentryEnvironmentTag,
+    autoSessionTracking: FirehawkADK.ParamDeck.SentryReportGameHealth,
     beforeSend(event) {
         // Check if it is an exception, and if so, show the report dialog
         if (event.exception && event.level == 'fatal') {
-            Sentry.showReportDialog({ 
+            Sentry.showReportDialog({
                 eventId: event.event_id,
                 title: FirehawkADK.ParamDeck.SentryFeedbackScreenTitle,
                 subtitle: FirehawkADK.ParamDeck.SentryFeedbackScreenSubtitle,
@@ -215,7 +226,7 @@ Sentry.init({
                 labelEmail: FirehawkADK.ParamDeck.SentryFeedbackScreenEmailField,
                 labelComments: FirehawkADK.ParamDeck.SentryFeedbackScreenCommentsField,
                 successMessage: FirehawkADK.ParamDeck.SentryFeedbackScreenSuccessMessage
-             });
+            });
         }
         return event;
     },
@@ -244,11 +255,18 @@ SceneManager.catchException = function (e) {
         console.error(e.stack);
     } else {
         Graphics.printError('UnknownError', e);
-    } 
+    }
     AudioManager.stopAll();
     FirehawkADK.SentryIntegration.ReportEvent(e, 'fatal', 'engine', 'code');
     this.stop();
 
+};
+
+//Re-write the exit code so Sentry can finish up any work needed.
+SceneManager.exit = function () {
+    Sentry.close(10000);
+    this.goto(null);
+    this._exiting = true;
 };
 
 //Implements the error report code. Edit this if you want to adjust how the library will collect information.
