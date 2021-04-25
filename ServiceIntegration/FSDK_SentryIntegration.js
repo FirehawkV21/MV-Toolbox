@@ -1,12 +1,12 @@
 // Sentry Integration for RPG Maker MV
-// Version R1.02
+// Version R1.03
 // Created by Studio ACE
 
 var FirehawkADK = FirehawkADK || {};
 FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
 /*:
  *
- * @plugindesc R1.02 || Provides automatic crash and error reports to the developer using Sentry.
+ * @plugindesc R1.03 || Provides automatic crash and error reports to the developer using Sentry.
  * @author AceOfAces
  * 
  * @param Setup
@@ -41,6 +41,13 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * @on Send
  * @off Don't send
  * @default false
+ * 
+ * @param Events stored offline
+ * @parent Setup
+ * @desc How many events can be stored when the user is offline? (Default: 30)
+ * @type Number
+ * @min 1
+ * @default 30
  * 
  * @param Options
  * 
@@ -97,7 +104,7 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * 
  * @help
  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
- * Sentry Integration for RPG Maker MV - Version R1.00
+ * Sentry Integration for RPG Maker MV - Version R1.03
  * Developed by AceOfAces
  * Licensed under the MIT license. Can be used for both non-commercial
  * and commercial games.
@@ -111,18 +118,26 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
  * Installation and setup:
  * 1. Sign up to Sentry (https://sentry.io). We'll need a DSN for this.
- * Note: Make sure that the version 6.0.0 or higher.
  * 2. Once you've signed up, you'll be asked to create a project.
  * follow the instruction (make sure to select JavaScript as the
  * programming language).
- * 3. Now, you'll need to download the package. Copy the URL in the
- * "<script" part and open the link in the browser. Then, right click
- * and select "Save As...". Save the js file in the game's js/libs folder.
- * For simplicity, name it as sentry.js
+ * 3. Now, you'll need to download the packages. Copy the following
+ * links to your browser, then save those files with a name that you
+ * can easily find.
+ * (Replace the <version part with the library's version. See
+ * here: https://docs.sentry.io/platforms/javascript/install/cdn/)
+ * Base: https://browser.sentry-cdn.com/<version>/bundle.min.js
+ * Console Capture: https://browser.sentry-cdn.com/<version>/captureconsole.min.js
+ * Offline Support: https://browser.sentry-cdn.com/<version>/offline.min.js
+ * Note: Make sure that the version of the library is 6.3.0 or higher.
+ * For simplicity, name these as sentry.js, sentry-consolecapture.js and
+ * sentry-offlinesupport.js
  * 4. Now, let's set up your project. Do the following:
  *  - Edit the index.html with a code editor (or notepad). In the
  *  body section, insert this on top of the line that references pixi.js:
  *  <script type="text/javascript" src="js/libs/sentry.js"></script>
+ *  <script type="text/javascript" src="js/libs/sentry-consolecapture.js"></script>
+ *  <script type="text/javascript" src="js/libs/sentry-offlinesupport.js"></script>
  *  - Put the plugin in the top area of the plugin list. This is important,
  *  since we need to initialize the library before the game starts up.
  *  - If you use Yanfly's Core Engine or Olivia's Player Anti-Stress plugin,
@@ -170,9 +185,19 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * Default Setting: This sets the default setting that the game will have.
  * For some countries, you may have to set this to 'Don't send', in order to
  * comply with laws regarding privacy.
+ * Release Health: If this is turned on, Sentry will record the session 
  * Force Reporting: This forces the game to report crashes, regardless
  * if it's on or when you are play testing. This is ignored when
  * you aren't debugging the game (Running the game via the editor).
+ * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+ * About Device Info
+ * 
+ * This option will allow Sentry to send select information about the device
+ * the game runs on. This may be useful for diagnosing some specific issues.
+ * Please note that this only works with the Windows, Mac and Linux builds
+ * of your game. The details that are collected are:
+ * OS version, Free and Total RAM and CPU Name, Speed and the architecture
+ * that NW.js is built for.
  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
  * What's next?
  * -Make sure that your Sentry account is secured. Use a strong
@@ -207,6 +232,7 @@ FirehawkADK.ParamDeck.SentryFeedbackScreenEmailField = String(paramdeck['Email F
 FirehawkADK.ParamDeck.SentryFeedbackScreenCommentsField = String(paramdeck['Comments Field Label']);
 FirehawkADK.ParamDeck.SentryFeedbackScreenSuccessMessage = String(paramdeck['Feedback Sent Label']);
 FirehawkADK.ParamDeck.SentryReportGameHealth = String(paramdeck['Release Health']).trim().toLowerCase() === 'true';
+FirehawkADK.ParamDeck.SentryMaxEventsStored = parseInt(ParamDeck['Events stored offline']);
 
 //The initialization code. 
 Sentry.init({
@@ -230,6 +256,18 @@ Sentry.init({
         }
         return event;
     },
+    integrations: [new Sentry.Integrations.CaptureConsole(
+        {
+            // array of methods that should be captured
+            // defaults to ['log', 'info', 'warn', 'error', 'debug', 'assert']
+            levels: ['log', 'info', 'warn', 'error']
+        }
+    ),
+        new Sentry.Integrations.Offline(
+        {
+                maxStoredEvents: FirehawkADK.ParamDeck.SentryMaxEventsStored
+        }
+    )]
 });
 
 //Initialize config.
@@ -275,6 +313,19 @@ FirehawkADK.SentryIntegration.ReportEvent = function (e, reportLevel, report_tag
         scope.setTag(report_tag1, report_tag2);
         scope.setLevel(reportLevel);
     });
+    if (reportLevel == 'fatal') {
+        if (!DataManager.isEventTest() && !DataManager.isBattleTest())
+            Sentry.setContext('location', {
+                'current_map': $dataMapInfos[$gameMap.mapId()].name,
+                'position_x': $gamePlayer._realX,
+                'position_y': $gamePlayer._realY,
+                'has_collided': $gamePlayer.isCollidedWithEvents(),
+                'is_in_vehicle': $gamePlayer.isInVehicle(),
+                'map_region_id': $gameMap.regionId($gamePlayer._realX, $gamePlayer._realY),
+                'is_fighting': $gameParty._inBattle
+
+            });
+    }
     if ((FirehawkADK.ParamDeck.SentryForceFlag && Utils.isOptionValid('test')) || (!Utils.isOptionValid('test') && ConfigManager.SentryUploadReports)) Sentry.captureException(e);
 };
 
