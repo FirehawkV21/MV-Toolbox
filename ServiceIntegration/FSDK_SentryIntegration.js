@@ -1,12 +1,12 @@
 // Sentry Integration for RPG Maker MV
-// Version R1.03
+// Version R1.03a
 // Created by Studio ACE
 
 var FirehawkADK = FirehawkADK || {};
 FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
 /*:
  *
- * @plugindesc R1.03 || Provides automatic crash and error reports to the developer using Sentry.
+ * @plugindesc R1.03a || Provides automatic crash and error reports to the developer using Sentry.
  * @author AceOfAces
  * 
  * @param Setup
@@ -104,7 +104,7 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * 
  * @help
  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
- * Sentry Integration for RPG Maker MV - Version R1.03
+ * Sentry Integration for RPG Maker MV - Version R1.03a
  * Developed by AceOfAces
  * Licensed under the MIT license. Can be used for both non-commercial
  * and commercial games.
@@ -232,7 +232,7 @@ FirehawkADK.ParamDeck.SentryFeedbackScreenEmailField = String(paramdeck['Email F
 FirehawkADK.ParamDeck.SentryFeedbackScreenCommentsField = String(paramdeck['Comments Field Label']);
 FirehawkADK.ParamDeck.SentryFeedbackScreenSuccessMessage = String(paramdeck['Feedback Sent Label']);
 FirehawkADK.ParamDeck.SentryReportGameHealth = String(paramdeck['Release Health']).trim().toLowerCase() === 'true';
-FirehawkADK.ParamDeck.SentryMaxEventsStored = parseInt(ParamDeck['Events stored offline']);
+FirehawkADK.ParamDeck.SentryMaxEventsStored = parseInt(paramdeck['Events stored offline']);
 
 //The initialization code. 
 Sentry.init({
