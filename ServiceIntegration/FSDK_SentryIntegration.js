@@ -1,32 +1,38 @@
 // Sentry Integration for RPG Maker MV
-// Version R1.03a
+// Version R1.04
 // Created by Studio ACE
 
 var FirehawkADK = FirehawkADK || {};
 FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
 /*:
  *
- * @plugindesc R1.03a || Provides automatic crash and error reports to the developer using Sentry.
+ * @plugindesc R1.04 || Provides automatic crash and error reports to the developer using Sentry.
  * @author AceOfAces
  * 
  * @param Setup
  * 
- * @param DSN
+ * @param dsn
+ * @text DSN
  * @parent Setup
+ * @type text
  * @desc The key that is necessary to send data to.
  * @default <autentication_token>[at]sentry.io/<project-id>
  * 
- * @param Release Tag
+ * @param releaseTag
+ * @text Release Tag
  * @parent Setup
  * @desc The tag that is used to denote a release.
  * @default my-project-name[at]1.0.0
  * 
- * @param Environment Tag
+ * @param environmentTag
+ * @text Environment Tag
+ * @type text
  * @parent Setup
  * @desc The tag used to split releases. Handy if you have multiple releases (eg. Stable, Beta, Alpha, etc.)
  * @default dev 
  * 
- * @param Default Setting
+ * @param defaultSetting
+ * @text Default Setting
  * @parent Setup
  * @desc Which will be the default?
  * @type boolean
@@ -34,7 +40,8 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * @off Don't send
  * @default false
  * 
- * @param Release Health
+ * @param releaseHealth
+ * @text Release Health
  * @parent Setup
  * @desc Should Sentry report the session's status? This is helpful for diagnosing regressions.
  * @type boolean
@@ -42,69 +49,110 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * @off Don't send
  * @default false
  * 
- * @param Events stored offline
+ * @param offlineEventStorageCount
+ * @text Maximum Events Stored Offline
  * @parent Setup
  * @desc How many events can be stored when the user is offline? (Default: 30)
  * @type Number
  * @min 1
  * @default 30
  * 
- * @param Options
- * 
- * @param Force Reporting
- * @parent Options
+ * @param sendDeviceInfo
+ * @text Send Device Info
+ * @parent Setup
+ * @desc Should Sentry record some information about the device? Helpful for diagnosing device-related issues (desktop only).
  * @type boolean
- * @on Yes
- * @off No
- * @desc Forces the plugin to always send reports.
+ * @on Send
+ * @off Don't send
  * @default false
  * 
- * @param Option Name
+ * @param Options
+ * 
+ * @param sentryBreadcrumbs
+ * @text Maximum Breadcrumbs
+ * @parent Options
+ * @type Number
+ * @min 1
+ * @default 100
+ * @desc Sets the maximum number of breadcrumbs to send to Sentry (Default: 100)
+ *
+ * @param allowList
+ * @text Allow List
+ * @parent Options
+ * @type text[]
+ * @desc A list of domains that will be allowed for exception capturing. Leave this empty if you want to allow all sites.
+ * @default []
+ * 
+ * @param denyList
+ * @text Deny List
+ * @parent Options
+ * @type text[]
+ * @desc A list of sites that will not be allowed for exception capturing.
+ * @default []
+ * 
+ * @param forceReporting
+ * @text Debug mode
+ * @parent Options
+ * @type boolean
+ * @on On
+ * @off Off
+ * @desc If true, Sentry will show debug messages and send exceptions during playtesting. Helpful for testing the integration.
+ * @default false
+ * 
+ * @param optionsName
+ * @text Options Name
  * @parent Options
  * @desc The name of the setting in the options menu.
  * @default Auto-Upload Error Reports
  * 
  * @param Feedback Screen
  * 
- * @param Screen Title
+ * @param feedbackScreenTitle
+ * @text Screen Title
+ * @type text
  * @parent Feedback Screen
  * @desc The title of the feedback screen.
  * @default Ack! The game crashed.
  * 
- * @param Screen Subtitle 1
+ * @param feedbackScreenSubtitle1
+ * @text Screen Subtitle 1
  * @parent Feedback Screen
  * @desc This is the text that is shown below the title.
  * @default The crash has been reported to the dev.
  * 
- * @param Screen Subtitle 2
+ * @param feedbackScreenSubtitle2
+ * @text Screen Subtitle 2
  * @parent Feedback Screen
  * @desc The second subtitle.
  * @default You can help in diagnosing the issue by providing some details.
  * 
- * @param Name Field Label
+ * @param feedbackScreenNameField
+ * @text Name Field Label
  * @parent Feedback Screen
  * @desc The label for the Name field.
  * @default Name (Real, Nickname, whatever)
  * 
- * @param Email Field Label
+ * @param feedbackScreenEmailField
+ * @text Email Field Label
  * @parent Feedback Screen
  * @desc The label for the Email field.
  * @default Email (in case we need to contact you for more information)
  * 
- * @param Comments Field Label
+ * @param feedbackScreenCommentsFieldLabel
+ * @text Comments Field Label
  * @parent Feedback Screen
  * @desc The label for the Comments field.
  * @default What happened?
  * 
- * @param Feedback Sent Label
+ * @param feedbackScreenSentLabel
+ * @text Feedback Sent Label
  * @parent Feedback Screen
  * @desc The text shown when the feedback was sent successfully.
  * @default Thank you for your feedback! You may now re-launch the game by pressing F5 (or closing and opening the game).
  * 
- * 
  * @help
  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
- * Sentry Integration for RPG Maker MV - Version R1.03a
+ * Sentry Integration for RPG Maker MV - Version R1.04
  * Developed by AceOfAces
  * Licensed under the MIT license. Can be used for both non-commercial
  * and commercial games.
@@ -127,16 +175,13 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * (Replace the <version part with the library's version. See
  * here: https://docs.sentry.io/platforms/javascript/install/cdn/)
  * Base: https://browser.sentry-cdn.com/<version>/bundle.min.js
- * Console Capture: https://browser.sentry-cdn.com/<version>/captureconsole.min.js
  * Offline Support: https://browser.sentry-cdn.com/<version>/offline.min.js
- * Note: Make sure that the version of the library is 6.3.0 or higher.
- * For simplicity, name these as sentry.js, sentry-consolecapture.js and
- * sentry-offlinesupport.js
+ * Note: Make sure that the version of the library is 7.7.0 or higher.
+ * For simplicity, name these as sentry.js and sentry-offlinesupport.js
  * 4. Now, let's set up your project. Do the following:
  *  - Edit the index.html with a code editor (or notepad). In the
  *  body section, insert this on top of the line that references pixi.js:
  *  <script type="text/javascript" src="js/libs/sentry.js"></script>
- *  <script type="text/javascript" src="js/libs/sentry-consolecapture.js"></script>
  *  <script type="text/javascript" src="js/libs/sentry-offlinesupport.js"></script>
  *  - Put the plugin in the top area of the plugin list. This is important,
  *  since we need to initialize the library before the game starts up.
@@ -150,14 +195,13 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  *  initialize the SDK. Copy the DSN (see the init code in the setup page),
  *  the the version and environment tags you've set up over to this
  *  plugin's parameters. Make sure to replace [at] with the [at]
- *  symbol and switch the 'Force Reporting' to Yes.
+ *  symbol and switch the 'Debug Mode' to On.
  * 5. Once the project's set up, we'll need to test it out. Take any
  * plugin and add a myfunction1(); in another function. The AltMenuScreen
- * plugin is a good candidate. Also, make sure to set the 'Force Reporting'
- * option to Yes.
+ * plugin is a good candidate.
  * 6. If the game crashes and Sentry has en entry for the error, the
- * plugin's set up correctly. Set the 'Force Reporting' option to
- * No. Make sure to also remove the myfunction1(); as well.
+ * plugin's set up correctly. Set the 'Debug Mode' option to
+ * Off. Make sure to also remove the myfunction1(); as well.
  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
  * Plugin API
  * The plugin has a pretty simple API that can integrate easily
@@ -175,6 +219,15 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * This is also required.
  * report_tag: These are used for categorization purposes.
  * 
+ * FirehawkADK.SentryIntegration.SendMessage(message);
+ * Plugin command: SendMessage "Message"
+ * Send a message to Sentry. This is useful with some instances.
+ * 
+ * FirehawkADK.SentryIntegration.AddBreadcrumb(message, category, level);
+ * Plugin command: AddBreadcrumb "Message" "Category" "Level"
+ * Attaches a custom breadcrumb to the report. This can be useful for
+ * adding better context when diagnosing issues.
+ * 
  * The plugin parameters break down like this:
  * 
  * DSN: This is the key that the service gives you.
@@ -185,10 +238,14 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * Default Setting: This sets the default setting that the game will have.
  * For some countries, you may have to set this to 'Don't send', in order to
  * comply with laws regarding privacy.
+ * Max Breadcrumbs: This is the maximum number of breadcrumbs that will be
+ * sent with the report. Adjust this to your needs.
+ * Allow list and Block list: This is more useful when the game is
+ * hosted on a server. You can set the allow and block list of sites
+ * that Sentry will be tracking for reports (CDN sites, for example).
  * Release Health: If this is turned on, Sentry will record the session 
- * Force Reporting: This forces the game to report crashes, regardless
- * if it's on or when you are play testing. This is ignored when
- * you aren't debugging the game (Running the game via the editor).
+ * Debug Mode: This enables Sentry's debug mode and lets the plugin send
+ * reports during debugging the game.
  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
  * About Device Info
  * 
@@ -218,21 +275,26 @@ var paramdeck = PluginManager.parameters('FSDK_SentryIntegration');
 //Create the global Parameter Deck.
 FirehawkADK.ParamDeck = FirehawkADK.ParamDeck || {};
 //Load variables set in the Plugin Manager.
-FirehawkADK.ParamDeck.SentryDSN = String(paramdeck['DSN']);
-FirehawkADK.ParamDeck.SentryReleaseTag = String(paramdeck['Release Tag']);
-FirehawkADK.ParamDeck.SentryEnvironmentTag = String(paramdeck['Environment Tag']);
-FirehawkADK.ParamDeck.SentryActivationFlag = String(paramdeck['Default Setting']).trim().toLowerCase() === 'true';
+FirehawkADK.ParamDeck.SentryDSN = String(paramdeck['dsn']);
+FirehawkADK.ParamDeck.SentryReleaseTag = String(paramdeck['releaseTag']);
+FirehawkADK.ParamDeck.SentryEnvironmentTag = String(paramdeck['environmentTag']);
+FirehawkADK.ParamDeck.SentryActivationFlag = String(paramdeck['defaultSetting']).trim().toLowerCase() === 'true';
 FirehawkADK.ParamDeck.SentryForceFlag = String(paramdeck['Force Reporting']).trim().toLowerCase() === 'true';
-FirehawkADK.ParamDeck.SentryActivationOptionName = String(paramdeck['Option Name']);
-FirehawkADK.ParamDeck.SentryFeedbackScreenTitle = String(paramdeck['Screen Title']);
-FirehawkADK.ParamDeck.SentryFeedbackScreenSubtitle = String(paramdeck['Screen Subtitle 1']);
-FirehawkADK.ParamDeck.SentryFeedbackScreenSubtitle2 = String(paramdeck['Screen Subtitle 2']);
-FirehawkADK.ParamDeck.SentryFeedbackScreenNameField = String(paramdeck['Name Field Label']);
-FirehawkADK.ParamDeck.SentryFeedbackScreenEmailField = String(paramdeck['Email Field Label']);
-FirehawkADK.ParamDeck.SentryFeedbackScreenCommentsField = String(paramdeck['Comments Field Label']);
-FirehawkADK.ParamDeck.SentryFeedbackScreenSuccessMessage = String(paramdeck['Feedback Sent Label']);
-FirehawkADK.ParamDeck.SentryReportGameHealth = String(paramdeck['Release Health']).trim().toLowerCase() === 'true';
-FirehawkADK.ParamDeck.SentryMaxEventsStored = parseInt(paramdeck['Events stored offline']);
+FirehawkADK.ParamDeck.SentryActivationOptionName = String(paramdeck['optionsName']);
+FirehawkADK.ParamDeck.SentryFeedbackScreenTitle = String(paramdeck['feedbackScreenTitle']);
+FirehawkADK.ParamDeck.SentryFeedbackScreenSubtitle = String(paramdeck['feedbackScreenSubtitle1']);
+FirehawkADK.ParamDeck.SentryFeedbackScreenSubtitle2 = String(paramdeck['feedbackScreenSubtitle2']);
+FirehawkADK.ParamDeck.SentryFeedbackScreenNameField = String(paramdeck['feedbackScreenNameField']);
+FirehawkADK.ParamDeck.SentryFeedbackScreenEmailField = String(paramdeck['feedbackScreenEmailField']);
+FirehawkADK.ParamDeck.SentryFeedbackScreenCommentsField = String(paramdeck['feedbackScreenCommentsFieldLabel']);
+FirehawkADK.ParamDeck.SentryFeedbackScreenSuccessMessage = String(paramdeck['feedbackScreenSentLabel']);
+FirehawkADK.ParamDeck.SentryReportGameHealth = String(paramdeck['releaseHealth']).trim().toLowerCase() === 'true';
+FirehawkADK.ParamDeck.SentryReportDeviceInfo = String(paramdeck['sendDeviceInfo']).trim().toLowerCase() === 'true';
+FirehawkADK.ParamDeck.SentryMaxEventsStored = parseInt(paramdeck['offlineEventStorageCount']);
+FirehawkADK.ParamDeck.SentryMaxBreadcrumbs = parseInt(paramdeck['maxBreadcrumbs']);
+FirehawkADK.ParamDeck.SentryCaptureLevels = (paramdeck['consoleCapture']);
+FirehawkADK.ParamDeck.SentryAllowList = (paramdeck['allowList']);
+FirehawkADK.ParamDeck.SentryDenyList = (paramdeck['denyList']);
 
 //The initialization code. 
 Sentry.init({
@@ -240,6 +302,7 @@ Sentry.init({
     release: FirehawkADK.ParamDeck.SentryReleaseTag,
     environment: FirehawkADK.ParamDeck.SentryEnvironmentTag,
     autoSessionTracking: FirehawkADK.ParamDeck.SentryReportGameHealth,
+    maxBreadcrumbs: FirehawkADK.ParamDeck.SentryMaxBreadcrumbs,
     beforeSend(event) {
         // Check if it is an exception, and if so, show the report dialog
         if (event.exception && event.level == 'fatal') {
@@ -251,23 +314,15 @@ Sentry.init({
                 labelName: FirehawkADK.ParamDeck.SentryFeedbackScreenNameField,
                 labelEmail: FirehawkADK.ParamDeck.SentryFeedbackScreenEmailField,
                 labelComments: FirehawkADK.ParamDeck.SentryFeedbackScreenCommentsField,
-                successMessage: FirehawkADK.ParamDeck.SentryFeedbackScreenSuccessMessage
+                successMessage: FirehawkADK.ParamDeck.SentryFeedbackScreenSuccessMessage,
+                allowList: FirehawkADK.ParamDeck.SentryAllowList,
+                denyList: FirehawkADK.ParamDeck.SentryDenyList,
+                enabled: (!FirehawkADK.ParamDeck.SentryForceFlag && Utils.isOptionValid('test')) ? false : true,
+                debug: (FirehawkADK.ParamDeck.SentryForceFlag && Utils.isOptionValid('test')) ? true : false
             });
         }
         return event;
-    },
-    integrations: [new Sentry.Integrations.CaptureConsole(
-        {
-            // array of methods that should be captured
-            // defaults to ['log', 'info', 'warn', 'error', 'debug', 'assert']
-            levels: ['log', 'info', 'warn', 'error']
-        }
-    ),
-        new Sentry.Integrations.Offline(
-        {
-                maxStoredEvents: FirehawkADK.ParamDeck.SentryMaxEventsStored
-        }
-    )]
+    }
 });
 
 //Initialize config.
@@ -325,9 +380,49 @@ FirehawkADK.SentryIntegration.ReportEvent = function (e, reportLevel, report_tag
                 'is_fighting': $gameParty._inBattle
 
             });
+        if (Utils.isNwjs() && FirehawkADK.ParamDeck.SentryReportDeviceInfo) {
+            var internals = require('os');
+            var cpuData = internals.cpus();
+            Sentry.setContext('device_internals', {
+                'system_ram': internals.totalmem() / 1048576,
+                'system_ram_free': internals.freemem() / 1048576,
+                'system_cpu': cpuData[0].model,
+                'system_cpu_speed': cpuData[0].speed,
+                'system_os_version': internals.version(),
+                'system_os_build': internals.release()
+            });
+        }
     }
-    if ((FirehawkADK.ParamDeck.SentryForceFlag && Utils.isOptionValid('test')) || (!Utils.isOptionValid('test') && ConfigManager.SentryUploadReports)) Sentry.captureException(e);
+    if ((!Utils.isOptionValid('test') && ConfigManager.SentryUploadReports)) Sentry.captureException(e);
 };
+
+//Implements the manual breadcrumb code.
+FirehawkADK.SentryIntegration.AddBreadcrumb = function (message, category, level) {
+    if ((!Utils.isOptionValid('test') && ConfigManager.SentryUploadReports)) Sentry.addBreadcrumb({
+        message: message,
+        category: category,
+        level: level
+    });
+}
+
+//Implements the send message code.
+FirehawkADK.SentryIntegration.SendMessage = function (message) {
+    if ((!Utils.isOptionValid('test') && ConfigManager.SentryUploadReports)) Sentry.captureMessage(message);
+}
+
+//The plugin command code.
+FirehawkADK.SentryIntegration.Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+    Game_Interpreter.prototype.pluginCommand = function (command, args) {
+        FirehawkADK.SentryIntegration.Game_Interpreter_pluginCommand.call(this, command, args)
+        switch (command) {
+            case 'AddBreadcrumb':
+                FirehawkADK.SentryIntegration.AddBreadcrumb(args[0], args[1], args[2]);
+                break;
+            case 'SendMessage':
+                FirehawkADK.SentryIntegration.SendMessage(args[0]);
+                break;
+        }
+    }
 
 //Add the setting to the Options menu.
 FirehawkADK.SentryIntegration.RegisterSetting = Window_Options.prototype.addGeneralOptions;
