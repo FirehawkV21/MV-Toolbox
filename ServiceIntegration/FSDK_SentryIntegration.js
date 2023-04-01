@@ -1,12 +1,12 @@
 // Sentry Integration for RPG Maker MV
-// Version R1.04
+// Version R1.05
 // Created by Studio ACE
 
 var FirehawkADK = FirehawkADK || {};
 FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
 /*:
  *
- * @plugindesc R1.04 || Provides automatic crash and error reports to the developer using Sentry.
+ * @plugindesc R1.05 || Provides automatic crash and error reports to the developer using Sentry.
  * @author AceOfAces
  * 
  * @param Setup
@@ -49,13 +49,6 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * @off Don't send
  * @default false
  * 
- * @param offlineEventStorageCount
- * @text Maximum Events Stored Offline
- * @parent Setup
- * @desc How many events can be stored when the user is offline? (Default: 30)
- * @type Number
- * @min 1
- * @default 30
  * 
  * @param sendDeviceInfo
  * @text Send Device Info
@@ -65,6 +58,38 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * @on Send
  * @off Don't send
  * @default false
+ * 
+ * @param Offline Support
+ * @parent Setup
+ * 
+ * @param dbName
+ * @text Database Name
+ * @parent Offline Support
+ * @default sentry-offline
+ * @desc The name for the IndexedDB database (that will hold the events).
+ * 
+ * @param dbStoreName
+ * @text Storage Name
+ * @parent Offline Support
+ * @default GameName
+ * @desc Name of the IndexedDB object store that will hold the events.
+ * 
+ * @param offlineEventStorageCount
+ * @text Maximum Events Stored Offline
+ * @parent Offline Support
+ * @desc How many events can be stored when the user is offline? (Default: 30)
+ * @type Number
+ * @min 1
+ * @default 30
+ * 
+ * @param flushAtBoot
+ * @text Flush at startup
+ * @parent Offlien Support
+ * @type boolean
+ * @default true
+ * @on Flush
+ * @off Don't flush
+ * @desc Should Sentry flush events shortly after startup?
  * 
  * @param Options
  * 
@@ -169,20 +194,18 @@ FirehawkADK.SentryIntegration = FirehawkADK.SentryIntegration || {};
  * 2. Once you've signed up, you'll be asked to create a project.
  * follow the instruction (make sure to select JavaScript as the
  * programming language).
- * 3. Now, you'll need to download the packages. Copy the following
- * links to your browser, then save those files with a name that you
+ * 3. Now, you'll need to download the package. Copy the link
+ *  to your browser, then save the file with a name that you
  * can easily find.
  * (Replace the <version part with the library's version. See
  * here: https://docs.sentry.io/platforms/javascript/install/cdn/)
- * Base: https://browser.sentry-cdn.com/<version>/bundle.min.js
- * Offline Support: https://browser.sentry-cdn.com/<version>/offline.min.js
- * Note: Make sure that the version of the library is 7.7.0 or higher.
- * For simplicity, name these as sentry.js and sentry-offlinesupport.js
+ * https://browser.sentry-cdn.com/<version>/bundle.min.js
+ * Note: Make sure that the version of the library is 7.46.0 or higher.
+ * For simplicity, name this as sentry.js
  * 4. Now, let's set up your project. Do the following:
  *  - Edit the index.html with a code editor (or notepad). In the
  *  body section, insert this on top of the line that references pixi.js:
  *  <script type="text/javascript" src="js/libs/sentry.js"></script>
- *  <script type="text/javascript" src="js/libs/sentry-offlinesupport.js"></script>
  *  - Put the plugin in the top area of the plugin list. This is important,
  *  since we need to initialize the library before the game starts up.
  *  - If you use Yanfly's Core Engine or Olivia's Player Anti-Stress plugin,
@@ -295,6 +318,10 @@ FirehawkADK.ParamDeck.SentryMaxBreadcrumbs = parseInt(paramdeck['maxBreadcrumbs'
 FirehawkADK.ParamDeck.SentryCaptureLevels = (paramdeck['consoleCapture']);
 FirehawkADK.ParamDeck.SentryAllowList = (paramdeck['allowList']);
 FirehawkADK.ParamDeck.SentryDenyList = (paramdeck['denyList']);
+FirehawkADK.ParamDeck.SentryOfflineObjectsLimit = parseInt(paramDeck['offlineEventStorageCount']) || 30;
+FirehawkADK.ParamDeck.SentryOfflineStorageName = String(paramdeck['dbName']);
+FirehawkADK.ParamDeck.SentryOfflineObjectStorage = String(paramdeck['dbStoreName']);
+FirehawkADK.ParamDeck.SentryFlushOfflineEvents = String(paramdeck['flushAtBoot']).trim().toLowerCase() === 'true';
 
 //The initialization code. 
 Sentry.init({
@@ -303,6 +330,13 @@ Sentry.init({
     environment: FirehawkADK.ParamDeck.SentryEnvironmentTag,
     autoSessionTracking: FirehawkADK.ParamDeck.SentryReportGameHealth,
     maxBreadcrumbs: FirehawkADK.ParamDeck.SentryMaxBreadcrumbs,
+    transport: Sentry.makeBrowserOfflineTransport(Sentry.makeFetchTransport),
+    transportOptions: {
+        dbName: FirehawkADK.ParamDeck.SentryOfflineStorageName,
+        storeName: FirehawkADK.SentryOfflineObjectStorage,
+        maxQueueSize: FirehawkADK.ParamDeck.SentryOfflineObjectsLimit,
+        flushAtStartup: FirehawkADK.ParamDeck.SentryFlushOfflineEvents
+    },
     beforeSend(event) {
         // Check if it is an exception, and if so, show the report dialog
         if (event.exception && event.level == 'fatal') {
@@ -429,4 +463,8 @@ FirehawkADK.SentryIntegration.RegisterSetting = Window_Options.prototype.addGene
 Window_Options.prototype.addGeneralOptions = function () {
     FirehawkADK.SentryIntegration.RegisterSetting.call(this);
     this.addCommand(FirehawkADK.ParamDeck.SentryActivationOptionName, 'SentryUploadReports');
+};
+
+SceneManager.preferableRendererType = function () {
+        return 'webgl';
 };
