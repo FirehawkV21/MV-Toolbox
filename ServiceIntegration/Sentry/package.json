@@ -1,12 +1,8 @@
 {
     "name": "sentryintegration",
-    "version": "1.0.0",
+    "version": "1.6.0",
     "source": "FSDK_SentryIntegration.js",
     "main": "dist/FSDK_SentryIntegration.js",
-    "scripts": {
-        "watch": "parcel watch",
-        "build": "parcel build"
-    },
     "dependencies": {
         "@sentry/browser": "^7.46.0"
     },

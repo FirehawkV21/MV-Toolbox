@@ -188,18 +188,10 @@
  * 2. Once you've signed up, you'll be asked to create a project.
  * follow the instruction (make sure to select JavaScript as the
  * programming language).
- * 3. Now, you'll need to download the packages. Copy the following
- * links to your browser, then save those files with a name that you
- * can easily find.
- * (Replace the <version part with the library's version. See
- * here: https://docs.sentry.io/platforms/javascript/install/cdn/)
- * Base: https://browser.sentry-cdn.com/<version>/bundle.min.js
- * Note: Make sure that the version of the library is 7.46.0 or higher.
- * For simplicity, name this as sentry.js
+ * 3. (Optional) If you are using the raw version, use the included
+ * cook script so it can create an up-to-date version of this
+ * plugin with the latest version of Sentry.
  * 4. Now, let's set up your project. Do the following:
- *  - Edit the index.html with a code editor (or notepad). In the
- *  body section, insert this on top of the line that references pixi.js:
- *  <script type="text/javascript" src="js/libs/sentry.js"></script>
  *  - Put the plugin in the top area of the plugin list. This is important,
  *  since we need to initialize the library before the game starts up.
  *  - If you use Yanfly's Core Engine or Olivia's Player Anti-Stress plugin,
