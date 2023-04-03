@@ -129,15 +129,14 @@ FirehawkADK.SentryIntegration.ReportEvent = function (e, reportLevel, report_tag
 
             });
         if (Utils.isNwjs() && FirehawkADK.ParamDeck.SentryReportDeviceInfo) {
-            //var internals = require('os');
-            var cpuData = internals.cpus();
+            var cpuData = deviceinternals.cpus();
             Sentry.setContext('device_internals', {
-                'system_ram': internals.totalmem() / 1048576,
-                'system_ram_free': internals.freemem() / 1048576,
+                'system_ram': deviceinternals.totalmem() / 1048576,
+                'system_ram_free': deviceinternals.freemem() / 1048576,
                 'system_cpu': cpuData[0].model,
                 'system_cpu_speed': cpuData[0].speed,
-                'system_os_version': internals.version(),
-                'system_os_build': internals.release()
+                'system_os_version': deviceinternals.version(),
+                'system_os_build': deviceinternals.release()
             });
         }
     }

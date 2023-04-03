@@ -1,2 +1,3 @@
 ServiceIntegration/Sentry/node_modules/*
 ServiceIntegration/Sentry/dist/*
+ServiceIntegration/Sentry/cooked/FSDK_SentryIntegration.js

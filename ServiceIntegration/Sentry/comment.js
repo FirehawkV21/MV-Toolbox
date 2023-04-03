@@ -1,3 +1,5 @@
+var deviceinternals = require('os');
+
 /*:
  *
  * @plugindesc R1.06 || Provides automatic crash and error reports to the developer using Sentry.
