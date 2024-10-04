@@ -4,7 +4,7 @@
     "source": "FSDK_SentryIntegration.js",
     "main": "dist/FSDK_SentryIntegration.js",
     "dependencies": {
-        "@sentry/browser": "^7.46.0",
+        "@sentry/browser": "^7.119.1",
         "@types/node": "^18.15.11"
     },
     "devDependencies": {
